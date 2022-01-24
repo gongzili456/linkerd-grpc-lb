@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lb-client
+  namespace: default
+  labels:
+    app: lb-client
+spec:
+  selector:
+    matchLabels:
+      app: lb-client
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: 'false'
+      labels:
+        app: lb-client
+    spec:
+      containers:
+        - image: 'grpc-lb-server:latest'
+          name: lb-client
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: config-volume
+              mountPath: /data/conf
+      volumes:
+        - name: config-volume
+          configMap:
+            # Provide the name of the ConfigMap containing the files you want
+            # to add to the container
+            name: lb-server-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: lb-client
+  namespace: default
+  labels:
+    app: lb-client
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8001
+  selector:
+    app: lb-client
