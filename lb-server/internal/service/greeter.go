@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	v1 "lb-server/api/helloworld/v1"
@@ -14,16 +13,6 @@ import (
 
 // host := "localhost:9001"
 var host = "lb-server.default:9001"
-var connection *grpc.ClientConn
-
-func init() {
-	conn, err := grpc.Dial(host, grpc.WithInsecure())
-	if err != nil {
-		fmt.Errorf("grpc.Dial err: %v", err)
-		panic(err)
-	}
-	connection = conn
-}
 
 // GreeterService is a greeter service.
 type GreeterService struct {
@@ -31,11 +20,20 @@ type GreeterService struct {
 
 	uc  *biz.GreeterUsecase
 	log *log.Helper
+
+	conn *grpc.ClientConn
 }
 
 // NewGreeterService new a greeter service.
 func NewGreeterService(uc *biz.GreeterUsecase, logger log.Logger) *GreeterService {
-	return &GreeterService{uc: uc, log: log.NewHelper(logger)}
+	log := log.NewHelper(logger)
+	conn, err := grpc.Dial(host, grpc.WithInsecure())
+	if err != nil {
+		log.Errorf("grpc.Dial err: %v", err)
+		panic(err)
+	}
+
+	return &GreeterService{uc: uc, log: log, conn: conn}
 }
 
 // SayHello implements helloworld.GreeterServer
@@ -50,7 +48,7 @@ func (s *GreeterService) SayHello(ctx context.Context, in *v1.HelloRequest) (*v1
 
 func (s *GreeterService) Ping(ctx context.Context, in *v1.Empty) (*v1.HelloReply, error) {
 	s.log.WithContext(ctx).Infof("Ping Received")
-	client := v1.NewGreeterClient(connection)
+	client := v1.NewGreeterClient(s.conn)
 	reply, err := client.SayHello(ctx, &v1.HelloRequest{Name: time.Now().Local().String()})
 	if err != nil {
 		s.log.WithContext(ctx).Errorf("Ping SayHello err: %v", err)
