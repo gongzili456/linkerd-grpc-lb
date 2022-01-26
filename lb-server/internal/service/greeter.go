@@ -11,8 +11,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-// host := "localhost:9001"
-var host = "lb-server.default:9001"
+var host = "localhost:9001"
+
+// var host = "lb-server.default:9001"
 
 // GreeterService is a greeter service.
 type GreeterService struct {

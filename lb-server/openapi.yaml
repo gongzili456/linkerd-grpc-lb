@@ -3,48 +3,35 @@
 
 openapi: 3.0.3
 info:
-    title: Greeter API
-    description: The greeting service definition.
+    title: RouteGuide
+    description: Interface exported by the server.
     version: 0.0.1
 paths:
-    /helloworld/{name}:
+    /list_features:
         get:
-            tags:
-                - Greeter
-            description: Sends a greeting
-            operationId: Greeter_SayHello
-            parameters:
-                - name: name
-                  in: path
-                  required: true
-                  schema:
-                    type: string
+            operationId: RouteGuide_CallListFeatures
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/HelloReply'
-    /ping:
+                                $ref: '#/components/schemas/StringValue'
+    /route_chat:
         get:
-            tags:
-                - Greeter
-            operationId: Greeter_Ping
+            operationId: RouteGuide_CallRouteChat
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/HelloReply'
+                                $ref: '#/components/schemas/StringValue'
 components:
     schemas:
-        HelloReply:
-            type: object
+        StringValue:
             properties:
-                message:
+                value:
                     type: string
-            description: The response message containing the greetings
-tags:
-    - name: Greeter
+                    description: The string value.
+            description: Wrapper message for `string`. The JSON representation for `StringValue` is JSON string.
