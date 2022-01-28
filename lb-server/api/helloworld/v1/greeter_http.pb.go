@@ -18,6 +18,7 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 type GreeterHTTPServer interface {
+	Healthz(context.Context, *Empty) (*HelloReply, error)
 	Ping(context.Context, *Empty) (*HelloReply, error)
 	SayHello(context.Context, *HelloRequest) (*HelloReply, error)
 }
@@ -26,6 +27,7 @@ func RegisterGreeterHTTPServer(s *http.Server, srv GreeterHTTPServer) {
 	r := s.Route("/")
 	r.GET("/helloworld/{name}", _Greeter_SayHello0_HTTP_Handler(srv))
 	r.GET("/ping", _Greeter_Ping0_HTTP_Handler(srv))
+	r.GET("/healthz", _Greeter_Healthz0_HTTP_Handler(srv))
 }
 
 func _Greeter_SayHello0_HTTP_Handler(srv GreeterHTTPServer) func(ctx http.Context) error {
@@ -69,7 +71,27 @@ func _Greeter_Ping0_HTTP_Handler(srv GreeterHTTPServer) func(ctx http.Context) e
 	}
 }
 
+func _Greeter_Healthz0_HTTP_Handler(srv GreeterHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in Empty
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, "/helloworld.v1.Greeter/Healthz")
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Healthz(ctx, req.(*Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*HelloReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type GreeterHTTPClient interface {
+	Healthz(ctx context.Context, req *Empty, opts ...http.CallOption) (rsp *HelloReply, err error)
 	Ping(ctx context.Context, req *Empty, opts ...http.CallOption) (rsp *HelloReply, err error)
 	SayHello(ctx context.Context, req *HelloRequest, opts ...http.CallOption) (rsp *HelloReply, err error)
 }
@@ -80,6 +102,19 @@ type GreeterHTTPClientImpl struct {
 
 func NewGreeterHTTPClient(client *http.Client) GreeterHTTPClient {
 	return &GreeterHTTPClientImpl{client}
+}
+
+func (c *GreeterHTTPClientImpl) Healthz(ctx context.Context, in *Empty, opts ...http.CallOption) (*HelloReply, error) {
+	var out HelloReply
+	pattern := "/healthz"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation("/helloworld.v1.Greeter/Healthz"))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
 }
 
 func (c *GreeterHTTPClientImpl) Ping(ctx context.Context, in *Empty, opts ...http.CallOption) (*HelloReply, error) {

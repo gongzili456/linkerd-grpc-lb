@@ -119,6 +119,7 @@ func (s *StreamService) RouteChat(stream v1.RouteGuide_RouteChatServer) error {
 			return err
 		}
 		key := serialize(in.Location)
+		s.log.Debugf("key: %v", key)
 
 		s.mu.Lock()
 		s.routeNotes[key] = append(s.routeNotes[key], in)

@@ -1,0 +1,25 @@
+# @format
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autocannon
+  namespace: lb-test
+  labels:
+    app: autocannon
+spec:
+  selector:
+    matchLabels:
+      app: autocannon
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: 'false'
+      labels:
+        app: autocannon
+    spec:
+      containers:
+        - image: '789252305933.dkr.ecr.cn-northwest-1.amazonaws.com.cn/grpc-lb-test:autocannon.1'
+          name: autocannon
+          imagePullPolicy: Always

@@ -1,8 +1,10 @@
+# @format
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: lb-server
-  namespace: default
+  namespace: lb-test
   labels:
     app: lb-server
 spec:
@@ -18,16 +20,25 @@ spec:
         app: lb-server
     spec:
       containers:
-        - image: 'grpc-lb-server:latest'
+        - image: '789252305933.dkr.ecr.cn-northwest-1.amazonaws.com.cn/grpc-lb-test:0.0.2'
           name: lb-server
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh","-c","sleep 1"]
+                command: ['/bin/sh', '-c', 'sleep 15']
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: config-volume
               mountPath: /data/conf
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8001
+              httpHeaders:
+                - name: Custom-Header
+                  value: Awesome
+            initialDelaySeconds: 3
+            periodSeconds: 3
       volumes:
         - name: config-volume
           configMap:
@@ -36,12 +47,11 @@ spec:
             name: lb-server-config
 
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
   name: lb-server
-  namespace: default
+  namespace: lb-test
   labels:
     app: lb-server
 spec:

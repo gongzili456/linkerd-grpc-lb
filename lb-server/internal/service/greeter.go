@@ -8,12 +8,12 @@ import (
 	"lb-server/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"google.golang.org/grpc"
+	"github.com/go-kratos/kratos/v2/transport/grpc"
 )
 
-var host = "localhost:9001"
+// var host = "localhost:9001"
 
-// var host = "lb-server.default:9001"
+var host = "lb-server:9001"
 
 // GreeterService is a greeter service.
 type GreeterService struct {
@@ -22,19 +22,20 @@ type GreeterService struct {
 	uc  *biz.GreeterUsecase
 	log *log.Helper
 
-	conn *grpc.ClientConn
+	greeterClient v1.GreeterClient
 }
 
 // NewGreeterService new a greeter service.
 func NewGreeterService(uc *biz.GreeterUsecase, logger log.Logger) *GreeterService {
 	log := log.NewHelper(logger)
-	conn, err := grpc.Dial(host, grpc.WithInsecure())
+	conn, err := grpc.DialInsecure(context.Background(), grpc.WithEndpoint(host), grpc.WithTimeout(time.Second*5))
 	if err != nil {
 		log.Errorf("grpc.Dial err: %v", err)
 		panic(err)
 	}
 
-	return &GreeterService{uc: uc, log: log, conn: conn}
+	client := v1.NewGreeterClient(conn)
+	return &GreeterService{uc: uc, log: log, greeterClient: client}
 }
 
 // SayHello implements helloworld.GreeterServer
@@ -49,11 +50,15 @@ func (s *GreeterService) SayHello(ctx context.Context, in *v1.HelloRequest) (*v1
 
 func (s *GreeterService) Ping(ctx context.Context, in *v1.Empty) (*v1.HelloReply, error) {
 	s.log.WithContext(ctx).Infof("Ping Received")
-	client := v1.NewGreeterClient(s.conn)
-	reply, err := client.SayHello(ctx, &v1.HelloRequest{Name: time.Now().Local().String()})
+	reply, err := s.greeterClient.SayHello(ctx, &v1.HelloRequest{Name: time.Now().Local().String()})
 	if err != nil {
 		s.log.WithContext(ctx).Errorf("Ping SayHello err: %v", err)
 		return nil, err
 	}
 	return &v1.HelloReply{Message: reply.Message}, nil
+}
+
+func (s *GreeterService) Healthz(ctx context.Context, in *v1.Empty) (*v1.HelloReply, error) {
+	s.log.Debugf("Healthz Received")
+	return &v1.HelloReply{Message: "ok"}, nil
 }

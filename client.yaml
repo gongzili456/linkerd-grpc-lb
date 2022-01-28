@@ -1,8 +1,10 @@
+# @format
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: lb-client
-  namespace: default
+  namespace: lb-test
   labels:
     app: lb-client
 spec:
@@ -18,7 +20,7 @@ spec:
         app: lb-client
     spec:
       containers:
-        - image: 'grpc-lb-server:latest'
+        - image: '789252305933.dkr.ecr.cn-northwest-1.amazonaws.com.cn/grpc-lb-test:0.0.2'
           name: lb-client
           imagePullPolicy: IfNotPresent
           volumeMounts:
@@ -32,12 +34,11 @@ spec:
             name: lb-server-config
 
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
   name: lb-client
-  namespace: default
+  namespace: lb-test
   labels:
     app: lb-client
 spec:
